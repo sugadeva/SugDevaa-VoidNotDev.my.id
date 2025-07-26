@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Panel (Public)</title>
+  <link rel="icon" href="https://i.imgur.com/PIXG4uU.png" />
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0d1117;
+      color: #e6edf3;
+    }
+    header {
+      background-color: #161b22;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    header img { height: 50px; }
+    header h1 { font-size: 1.5rem; }
+    main {
+      max-width: 550px;
+      margin: 3rem auto;
+      padding: 1rem;
+    }
+    .card {
+      background-color: #1c2128;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    input, button {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: none;
+      border-radius: 8px;
+      background-color: #2c313a;
+      color: #e6edf3;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #238636;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #2ea043;
+    }
+    footer {
+      text-align: center;
+      margin: 2rem 0;
+      font-size: 0.9rem;
+      color: #8b949e;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://i.imgur.com/PIXG4uU.png" alt="Logo Toko">
+    <h1>Toko Panel Hosting</h1>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Create Your Panel (Public)</h2>
+      <form id="panelForm">
+        <input type="text" id="username" placeholder="Username" required />
+        <input type="email" id="email" placeholder="Email" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <input type="number" id="cpu" placeholder="CPU (Core)" min="1" required />
+        <input type="number" id="ram" placeholder="RAM (MB)" min="512" required />
+        <input type="number" id="disk" placeholder="Disk (MB)" min="1024" required />
+        <button type="submit">Create Panel</button>
+      </form>
+      <p id="result" style="text-align:center;"></p>
+    </div>
+  </main>
+
+  <footer>
+    Kontak Telegram: @TokoHosting | &copy; 2025
+  </footer>
+
+  <script>
+    const form = document.getElementById('panelForm');
+    const result = document.getElementById('result');
+
+    const API_KEY = "PASTE_API_KEY_KAMU"; // <<<<<<<<<<< GANTI INI
+    const API_URL = "https://panel.domainkamu.com/api/application"; // <<<<<< GANTI DOMAIN PANEL
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      result.textContent = "Loading...";
+
+      const userData = {
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        first_name: "User",
+        last_name: "Hosting",
+        password: document.getElementById('password').value,
+        root_admin: false,
+        language: "en"
+      };
+
+      // 1. Buat user dulu
+      let userId;
+      try {
+        const userRes = await fetch(`${API_URL}/users`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify(userData)
+        });
+
+        if (!userRes.ok) throw new Error("Gagal membuat user");
+
+        const userJson = await userRes.json();
+        userId = userJson.attributes.id;
+      } catch (err) {
+        result.textContent = "❌ Error membuat user.";
+        return;
+      }
+
+      // 2. Buat server
+      const serverData = {
+        name: `${userData.username}-server`,
+        user: userId,
+        egg: 1,
+        docker_image: "ghcr.io/pterodactyl/yolks:nodejs_18",
+        startup: "npm start",
+        environment: { "USER_UPLOAD": "1" },
+        limits: {
+          memory: parseInt(document.getElementById('ram').value),
+          swap: 0,
+          disk: parseInt(document.getElementById('disk').value),
+          io: 500,
+          cpu: parseInt(document.getElementById('cpu').value)
+        },
+        feature_limits: {
+          databases: 1,
+          allocations: 1,
+          backups: 1
+        },
+        allocation: { default: 1 }, // Ganti ID allocation
+        startup_on_completion: true
+      };
+
+      try {
+        const serverRes = await fetch(`${API_URL}/servers`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify(serverData)
+        });
+
+        if (!serverRes.ok) throw new Error("Gagal membuat server");
+
+        result.textContent = "✅ Panel berhasil dibuat!";
+      } catch (err) {
+        result.textContent = "❌ Error membuat server.";
+      }
+    });
+  </script>
+  <script>
+  const form = document.getElementById('panelForm');
+  const result = document.getElementById('result');
+
+  const API_KEY = "PASTE_API_KEY_KAMU"; // Ganti API KEY
+  const PANEL_URL = "https://panel.domainkamu.com"; // Ganti URL panel kamu
+  const API_URL = `${PANEL_URL}/api/application`;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    result.innerHTML = "⏳ Membuat panel, tunggu sebentar...";
+
+    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const cpu = parseInt(document.getElementById('cpu').value);
+    const ram = parseInt(document.getElementById('ram').value);
+    const disk = parseInt(document.getElementById('disk').value);
+
+    const userData = {
+      username,
+      email,
+      first_name: "User",
+      last_name: "Hosting",
+      password,
+      root_admin: false,
+      language: "en"
+    };
+
+    // 1. Buat user
+    let userId;
+    try {
+      const userRes = await fetch(`${API_URL}/users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify(userData)
+      });
+
+      if (!userRes.ok) throw new Error("Gagal membuat user");
+
+      const userJson = await userRes.json();
+      userId = userJson.attributes.id;
+    } catch (err) {
+      result.innerHTML = "❌ Gagal membuat user.";
+      return;
+    }
+
+    // 2. Buat server
+    const serverData = {
+      name: `${username}-server`,
+      user: userId,
+      egg: 1,
+      docker_image: "ghcr.io/pterodactyl/yolks:nodejs_18",
+      startup: "npm start",
+      environment: { "USER_UPLOAD": "1" },
+      limits: { memory: ram, swap: 0, disk: disk, io: 500, cpu: cpu },
+      feature_limits: { databases: 1, allocations: 1, backups: 1 },
+      allocation: { default: 1 }, // Ganti ID allocation kamu
+      startup_on_completion: true
+    };
+
+    try {
+      const serverRes = await fetch(`${API_URL}/servers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify(serverData)
+      });
+
+      if (!serverRes.ok) throw new Error("Gagal membuat server");
+
+      // ✅ Panel Berhasil
+      result.innerHTML = `
+        <div style="text-align:left;">
+          <p>✅ <strong>Panel berhasil dibuat!</strong></p>
+          <p><strong>🔗 Login Panel:</strong> <a href="${PANEL_URL}" target="_blank">${PANEL_URL}</a></p>
+          <p><strong>👤 Username:</strong> ${email}</p>
+          <p><strong>🔐 Password:</strong> ${password}</p>
+          <p style="color:lime;">Silakan login dan gunakan panel kamu!</p>
+        </div>
+      `;
+    } catch (err) {
+      result.innerHTML = "❌ Server gagal dibuat.";
+    }
+  });
+  </script>
+  
+</body>
+</html>
